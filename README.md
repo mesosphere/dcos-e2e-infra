@@ -3,6 +3,21 @@
 This repo holds some automation scripts that create an AWS EC2 instance using
 CloudFormation and prepares it to run DC/OS e2e tests.
 
+# What you'll need
+
+On your machine make sure to meet all of these requirements:
+
+* Have an AWS account
+* Have the `aws` CLI installed and properly configured. Make sure that `aws sts
+  get-caller-identity` returns a proper identity.
+* Bash: The `stack` script will only run in Bash so be sure to have that
+  installed.
+* Have `jq` installed. This is used for parsing `aws` output.
+* **For Enterprise DC/OS**: Have an SSH private key in `$HOME/.ssh/id_rsa` that can
+  be used to pull the `mesosphere/dcos-enterprise` repo.
+* **For Enterprise DC/OS**: Have a `license.txt` file that contains a proper
+  DC/OS Enterprise license.
+
 # How to use
 
 Configuration is provided using the `config.sh` file. You will also need an SSH
