@@ -62,4 +62,6 @@ STACK_NAME=makkes-e2e
 # must exist prior to creating the CloudFormation stack. The private key must
 # reside in a file called `ssh-key.pem` in the current directory.
 KEYPAIR_NAME=makkes-e2e
+# Do you want to test Open Source DC/OS or Enterprise? 'open' or 'ee'
+VARIANT=ee
 ```
