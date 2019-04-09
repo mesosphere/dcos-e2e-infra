@@ -1,0 +1,127 @@
+#!/bin/bash
+
+set -euo pipefail
+
+print_status() {
+    if [[ ${1-} == "-f" ]] ; then
+        while ( true ) ; do
+            STATUS=$(aws cloudformation describe-stacks --stack-name ${STACK_NAME}|jq -r '.Stacks[].StackStatus')
+            echo $STATUS
+            if [[ $STATUS != *"_IN_PROGRESS" ]] ; then
+                return 0
+            fi
+            sleep .5
+        done
+    else
+        aws cloudformation describe-stacks --stack-name ${STACK_NAME}|jq -r '.Stacks[].StackStatus'
+    fi
+}
+
+delete_stack() {
+    aws cloudformation delete-stack --stack-name ${STACK_NAME}
+    print_status
+}
+
+create_stack() {
+    echo "Creating stack..."
+    aws cloudformation create-stack \
+        --stack-name ${STACK_NAME} \
+        --region us-east-1 \
+        --template-body file://./e2e-instance.json \
+        --parameters ParameterKey=KeyName,ParameterValue=${KEYPAIR_NAME}
+    }
+
+print_outputs() {
+    aws cloudformation describe-stacks --stack-name ${STACK_NAME} | \
+        jq -r '.Stacks[].Outputs | map(.OutputKey), map(.OutputValue) | @csv' | \
+        column -s, -t
+    }
+
+get_ip_addr() {
+    aws cloudformation describe-stacks --stack-name ${STACK_NAME} | jq -r '.Stacks[].Outputs[] | select(.OutputKey == "PublicIP") | .OutputValue'
+}
+
+ssh_into_instance() {
+    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@$(get_ip_addr)
+}
+
+prepare_instance() {
+    VARIANT=$1
+    IPADDR=$(get_ip_addr)
+    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} mkdir e2e
+    if [[ ${VARIANT} == "ee" ]] ; then
+        scp -i ssh-key.pem -o "StrictHostKeyChecking no" license.txt ${HOME}/.ssh/id_rsa prepare-e2e.sh admin@${IPADDR}:e2e/
+        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh open'
+    else
+        scp -i ssh-key.pem -o "StrictHostKeyChecking no" prepare-e2e.sh admin@${IPADDR}:e2e/
+        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh ee'
+    fi
+}
+
+# check prerequisites
+
+PREREQ_FAILED=0
+
+[ -r ./config.sh ] && source ./config.sh
+
+if [[ -z ${STACK_NAME-} ]] ; then
+    echo "Please provide the CloudFormation stack name in the configuration/environment variable STACK_NAME"
+    PREREQ_FAILED=1
+fi
+
+if [[ -z ${KEYPAIR_NAME-} ]] ; then
+    echo "Please provide the EC2 keypair name in the configuration/environment variable KEYPAIR_NAME"
+    PREREQ_FAILED=1
+fi
+
+if [[ -z ${DCOS_VARIANT-} ]] ; then
+    echo "Please provide the DC/OS variant configuration/environment variable DCOS_VARIANT"
+    PREREQ_FAILED=1
+fi
+
+
+if [[ ! -r ssh-key.pem ]] ; then
+    echo "Please provide the SSH key for your EC2 instance in the file 'ssh-key.pem'"
+    PREREQ_FAILED=1
+fi
+
+if [[ ${PREREQ_FAILED} != 0 ]] ; then
+    exit 1
+fi
+
+# go for it
+
+case ${1-} in
+    create)
+        create_stack
+        echo "Waiting for stack to become ready..."
+        while ( true ) ; do
+            status=$(print_status)
+            if [[ ${status} == "CREATE_COMPLETE" ]] ; then
+                echo "Stack ready; waiting 30s for instance to boot..."
+                sleep 30
+                echo "Preparing instance..."
+                prepare_instance $DCOS_VARIANT
+                ssh_into_instance
+                echo "Done"
+                exit
+            fi
+            sleep .5
+        done
+        ;;
+    status)
+        print_status ${2-}
+        ;;
+    delete)
+        delete_stack
+        ;;
+    outputs)
+        print_outputs
+        ;;
+    ssh)
+        ssh_into_instance
+        ;;
+    *)
+        echo "Usage: $0 create|delete|status [-f]|outputs|ssh"
+        ;;
+esac
