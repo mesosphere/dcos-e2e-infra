@@ -51,10 +51,10 @@ prepare_instance() {
     ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} mkdir e2e
     if [[ ${VARIANT} == "ee" ]] ; then
         scp -i ssh-key.pem -o "StrictHostKeyChecking no" license.txt ${HOME}/.ssh/id_rsa prepare-e2e.sh admin@${IPADDR}:e2e/
-        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh open'
+        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh ee'
     else
         scp -i ssh-key.pem -o "StrictHostKeyChecking no" prepare-e2e.sh admin@${IPADDR}:e2e/
-        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh ee'
+        ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} 'cd e2e && ./prepare-e2e.sh open'
     fi
 }
 
