@@ -79,6 +79,10 @@ if [[ -z ${DCOS_VARIANT-} ]] ; then
     PREREQ_FAILED=1
 fi
 
+if [[ ${DCOS_VARIANT} == "ee" && ! -r license.txt ]] ; then
+    echo "Please add the 'license.txt' file to this folder. This file is needed for testing DC/OS Enterprise."
+    PREREQ_FAILED=1
+fi
 
 if [[ ! -r ssh-key.pem ]] ; then
     echo "Please provide the SSH key for your EC2 instance in the file 'ssh-key.pem'"
@@ -120,6 +124,9 @@ case ${1-} in
         ;;
     ssh)
         ssh_into_instance
+        ;;
+    prepare)
+        prepare_instance $DCOS_VARIANT
         ;;
     *)
         echo "Usage: $0 create|delete|status [-f]|outputs|ssh"

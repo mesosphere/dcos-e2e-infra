@@ -58,7 +58,7 @@ pyenv global 3.7.3
 cd ${DCOS_DIR}/test-e2e
 pip install -r requirements.txt
 
-echo 'export DCOS_LICENSE=${cat ~/e2e/license.txt}' >> ~/.bashrc
+echo 'export DCOS_LICENSE=$(cat ~/e2e/license.txt)' >> ~/.bashrc
 echo 'export DCOS_E2E_TMP_DIR_PATH=/tmp' >> ~/.bashrc
 echo 'export DCOS_E2E_GENCONF_PATH=~/dcos_generate_config.sh' >> ~/.bashrc
 echo 'export DCOS_E2E_LOG_DIR=/tmp/logs' >> ~/.bashrc
