@@ -42,7 +42,8 @@ get_ip_addr() {
 }
 
 ssh_into_instance() {
-    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@$(get_ip_addr)
+    CMD=${1-}
+    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@$(get_ip_addr) $CMD
 }
 
 prepare_instance() {
@@ -102,9 +103,17 @@ case ${1-} in
         while ( true ) ; do
             status=$(print_status)
             if [[ ${status} == "CREATE_COMPLETE" ]] ; then
-                echo "Stack ready; waiting 30s for instance to boot..."
-                sleep 30
-                echo "Preparing instance..."
+                echo "Stack ready; preparing instance..."
+                # try 30 times to SSH into the machine, then give up
+                set +e
+                for i in `seq 1 30` ; do
+                    ssh_into_instance true
+                    if [[ $? == 0 ]] ; then
+                        break
+                    fi
+                    sleep 1
+                done
+                set -e
                 prepare_instance $DCOS_VARIANT
                 ssh_into_instance
                 echo "Done"
