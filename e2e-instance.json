@@ -2,6 +2,10 @@
     "AWSTemplateFormatVersion" : "2010-09-09",
     "Description" : "AWS CloudFormation Sample Template EC2InstanceWithSecurityGroupSample: Create an Amazon EC2 instance running the Amazon Linux AMI. The AMI is chosen based on the region in which the stack is run. This example creates an EC2 security group for the instance to give you SSH access. **WARNING** This template creates an Amazon EC2 instance. You will be billed for the AWS resources used if you create a stack from this template.",
     "Parameters" : {
+        "Owner": {
+            "Description": "Owner of this stack (this is added as a tag to every resource)",
+            "Type": "String"
+        },
         "KeyName": {
             "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instance",
             "Type": "AWS::EC2::KeyPair::KeyName",
@@ -34,6 +38,7 @@
                 "ImageId" :  "ami-0f9e7e8867f55fd8e",
                 "SubnetId": { "Ref": "PublicSubnetA" },
                 "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
                     {"Key": "expiration", "Value": "365d"},
                     {"Key": "Name", "Value": { "Ref": "AWS::StackName" }}
                 ]
@@ -52,12 +57,20 @@
                     "FromPort" : "22",
                     "ToPort" : "22",
                     "CidrIp" : { "Ref" : "SSHLocation"}
-                } ]
+                } ],
+                "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
+                    {"Key": "expiration", "Value": "365d"}
+                ]
             }
         },
         "VPC": {
             "Type": "AWS::EC2::VPC",
             "Properties": {
+                "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
+                    {"Key": "expiration", "Value": "365d"}
+                ],
                 "CidrBlock": "10.0.0.0/24",
                 "EnableDnsSupport": true,
                 "EnableDnsHostnames": true,
@@ -81,7 +94,13 @@
         },
         "InternetGateway": {
             "Type": "AWS::EC2::InternetGateway",
-            "DependsOn": "VPC"
+            "DependsOn": "VPC",
+            "Properties": {
+                "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
+                    {"Key": "expiration", "Value": "365d"}
+                ]
+            }
         },
         "AttachGateway": {
             "Type": "AWS::EC2::VPCGatewayAttachment",
@@ -106,6 +125,8 @@
                     ]
                 },
                 "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
+                    {"Key": "expiration", "Value": "365d"},
                     {
                         "Key": "Name",
                         "Value": {
@@ -128,6 +149,8 @@
             "Properties": {
                 "VpcId": {"Ref": "VPC"},
                 "Tags": [
+                    {"Key": "owner", "Value": {"Ref": "Owner"}},
+                    {"Key": "expiration", "Value": "365d"},
                     {
                         "Key": "Name",
                         "Value": "Public"

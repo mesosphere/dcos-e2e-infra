@@ -28,7 +28,7 @@ create_stack() {
         --stack-name ${STACK_NAME} \
         --region us-east-1 \
         --template-body file://./e2e-instance.json \
-        --parameters ParameterKey=KeyName,ParameterValue=${KEYPAIR_NAME}
+        --parameters ParameterKey=KeyName,ParameterValue=${KEYPAIR_NAME} ParameterKey=Owner,ParameterValue=${OWNER}
     }
 
 print_outputs() {
@@ -85,6 +85,11 @@ if [[ ${DCOS_VARIANT} == "ee" && ! -r license.txt ]] ; then
     PREREQ_FAILED=1
 fi
 
+if [[ -z ${OWNER-} ]] ; then
+    echo "Please provide the owner of this stack in the configuration/environment variable OWNER"
+    PREREQ_FAILED=1
+fi
+
 if [[ ! -r ssh-key.pem ]] ; then
     echo "Please provide the SSH key for your EC2 instance in the file 'ssh-key.pem'"
     PREREQ_FAILED=1
@@ -118,6 +123,9 @@ case ${1-} in
                 ssh_into_instance
                 echo "Done"
                 exit
+            elif [[ ${status} != *"_IN_PROGRESS" ]] ; then
+                echo "Stack is in an unknown state (${status}), aborting"
+                break
             fi
             sleep .5
         done

@@ -79,4 +79,6 @@ STACK_NAME=makkes-e2e
 KEYPAIR_NAME=makkes-e2e
 # Do you want to test Open Source DC/OS or Enterprise? 'open' or 'ee'
 VARIANT=ee
+# Owner of the stack. This is used to tag all the AWS resources properly
+OWNER=makkes
 ```
