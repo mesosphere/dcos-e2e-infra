@@ -43,7 +43,8 @@ get_ip_addr() {
 
 ssh_into_instance() {
     CMD=${1-}
-    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@$(get_ip_addr) $CMD
+    IPADDR=$(get_ip_addr)
+    ssh -t -i ssh-key.pem -o "StrictHostKeyChecking no" admin@${IPADDR} $CMD
 }
 
 prepare_instance() {
